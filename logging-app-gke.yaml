@@ -1,0 +1,41 @@
+---
+apiVersion: "extensions/v1beta1"
+kind: "Deployment"
+metadata:
+  name: "logging-frontend"
+  namespace: "default"
+  labels:
+    app: "logging-frontend"
+    tier: "frontend"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "logging-frontend"
+      tier: "frontend"
+  template:
+    metadata:
+      labels:
+        app: "logging-frontend"
+        tier: "frontend"
+    spec:
+      containers:
+      - name: "logging"
+        image: "gcr.io/demogeauxcommerce/logging:latest"
+---
+apiVersion: "autoscaling/v1"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "logging-frontend-hpa"
+  namespace: "default"
+  labels:
+    app: "logging-frontend"
+    tier: "frontend"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "logging-frontend"
+    apiVersion: "apps/v1beta1"
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80

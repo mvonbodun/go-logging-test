@@ -1,21 +1,28 @@
-FROM golang:alpine
+# STEP 1 build executable binary
+FROM golang:alpine as builder
 
-ARG pkg=github.com/mvonbodun/go-logging-test
+# Install SSL ca certificates
+RUN apk update && apk add git && apk add ca-certificates
 
-RUN apk add --no-cache ca-certificates
+# Create appuser
+RUN adduser -D -g '' appuser
 
-COPY . $GOPATH/src/$pkg
+COPY . $GOPATH/src/github.com/mvonbodun/go-logging-test/
+WORKDIR $GOPATH/src/github.com/mvonbodun/go-logging-test/
 
-RUN set -ex \
-      && apk add --no-cache --virtual .build-deps \
-              git \
-      && go get -v $pkg/... \
-      && apk del .build-deps
+#get dependancies
+RUN go get -d -v
 
-RUN go install $pkg/...
+#build the binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a --installsuffix cgo -o /go/bin/app
 
-# Needed for templates for the front-end app.
-WORKDIR $GOPATH/src/$pkg/app
+# STEP 2 build a small image
+# start from scratch
+FROM scratch
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /etc/passwd /etc/passwd
 
-# Users of the image should invoke either of the commands.
-CMD echo "Use the app command."; exit 1
+# Copy our static executable
+COPY --from=builder /go/bin/app /go/bin/app
+USER appuser
+ENTRYPOINT ["/go/bin/app"]
