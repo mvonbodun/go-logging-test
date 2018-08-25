@@ -79,7 +79,7 @@ func LogWarning(w http.ResponseWriter, r *http.Request) {
 
 func LogError(w http.ResponseWriter, r *http.Request) {
 	log.Error("Log /error URL invoked. Test error log")
-	c := `{"ErrorPage": "This is an error"}`
+	c := `{"ErrorPage": "This is an error. Plus a minor change."}`
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	fmt.Fprintf(w, c)
 }
